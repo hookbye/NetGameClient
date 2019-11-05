@@ -50,7 +50,7 @@ public class SimpleAI : MonoBehaviour {
     private Dictionary<string, ActionStatus> actToStatus = new Dictionary<string, ActionStatus>();
     private Dictionary<ActionStatus,string> statusToAct = new Dictionary<ActionStatus, string>();
     //action param
-    private float speed=1f;
+    private float speed=5f;
     private float jumpSpeed = 2f;
 
 
@@ -68,8 +68,11 @@ public class SimpleAI : MonoBehaviour {
     private float hp=10f;
     private float attack=2f;
     private float defend = 1f;
-    public float searchScope = 2f;
+    public float searchScope = 50f;
     public float battleScope = 1f;
+
+    public float attackCD = 0f;
+    public float attackBeginTime = 0f;
 
 	// Use this for initialization
 	void Start () {
@@ -181,12 +184,21 @@ public class SimpleAI : MonoBehaviour {
 
     void BeAttacked(SimpleAI attacker)
     {
-        float hurt = attacker.GetAttack() - defend;
-        hp = hp - hurt;
-        Debug.Log("hp:"+hp);
-        if(hp < 0)
+        if (IsDie())
+            return;
+        
+        Debug.Log("hp " + hp);
+        if (hp <= 0)
         {
-            DoAction("die",true);
+            DoAction("die", true);
+        } else
+        {
+            if(attacker.IsActionDone())
+            {
+                float hurt = attacker.GetAttack() - defend;
+                hp = hp - hurt;
+                DoAction("getHit", !IsBeAttacked());
+            }
         }
     }
 
@@ -222,15 +234,26 @@ public class SimpleAI : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
+        if(IsDie())
+        {
+            return;
+        }
         HandleInput();
-        if (target != null && target)
+        if (target != null && !target.IsDie())
         {
             transform.LookAt(target.transform);
 
             if (Vector3.Distance(transform.position, target.transform.position) < battleScope)
             {
-                Attack(target.gameObject.GetComponent<SimpleAI>());
+                if(IsActionDone())
+                {
+                    Attack(target.gameObject.GetComponent<SimpleAI>());
+                }
                 return;
+            }
+            else
+            {
+                transform.position = transform.position + transform.forward * speed * Time.deltaTime;
             }
         }
         
@@ -243,6 +266,6 @@ public class SimpleAI : MonoBehaviour {
             }
 
         }
-        transform.position = transform.position + transform.forward * speed * Time.deltaTime;
+
     }
 }
