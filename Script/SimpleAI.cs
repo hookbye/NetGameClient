@@ -23,7 +23,7 @@ public class SimpleAI : MonoBehaviour {
         TAUNT,
         DIE,
     }
-    public ActionStatus status { get; set; }
+    public ActionStatus status;
     enum MoveStatus
     {
         WALK,
@@ -65,7 +65,7 @@ public class SimpleAI : MonoBehaviour {
     public GameScene battleManager;
 
     //battle logic
-    private float id = 0;
+    private int id = 0;
     private float maxHp=10f;
     private float hp=10f;
     private float attack=2f;
@@ -73,7 +73,7 @@ public class SimpleAI : MonoBehaviour {
     public float searchScope = 50f;
     public float battleScope = 2f;
 
-    public float attackCD = 0f;
+    public float attackCD = 5f;
     public float attackBeginTime = 0f;
 
 	// Use this for initialization
@@ -104,10 +104,10 @@ public class SimpleAI : MonoBehaviour {
         BindActionAndStatus("die", ActionStatus.DIE);
     }
 
-    void BindActionAndStatus(string act,ActionStatus status)
+    void BindActionAndStatus(string act,ActionStatus stat)
     {
-        actToStatus.Add(act, status);
-        statusToAct.Add(status,act);
+        actToStatus.Add(act, stat);
+        statusToAct.Add(stat,act);
     }
 
     void FindTarget()
@@ -136,6 +136,7 @@ public class SimpleAI : MonoBehaviour {
         if(IsActionDone() || forceBreak)
         {
             lastActBeginTime = Time.time;
+            Debug.LogWarning("real do action.."+IsActionDone()+" "+forceBreak);
             animator.SetTrigger(actHashId);
             AnimatorStateInfo stateInfo = animator.GetNextAnimatorStateInfo(0);
             actDuringTime = stateInfo.length;
@@ -239,6 +240,7 @@ public class SimpleAI : MonoBehaviour {
                 defender.BeAttacked(this);
                 attackBeginTime = Time.time;
             }
+            Debug.Log("is Attacking..." + IsAttacking()+" "+status);
             DoAction("attack_01", !IsAttacking());
         }
     }
