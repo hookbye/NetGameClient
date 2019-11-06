@@ -5,8 +5,8 @@ using UnityEditor;
 
 public class ProjectEditor:Editor {
 
-	[MenuItem("HOok/build")]
-    static void Build()
+	[MenuItem("HOok/buildAnroid")]
+    static void BuildAndroid()
     {
          string[] scenes =
         {
@@ -14,5 +14,16 @@ public class ProjectEditor:Editor {
             //"Assets/ActScene.unity",
          };
         BuildPipeline.BuildPlayer(scenes,"NetGame.apk",BuildTarget.Android,BuildOptions.None);
+    }
+    [MenuItem("HOok/buildIOS")]
+    static void BuildIOS()
+    {
+        string[] scenes =
+       {
+            "Assets/Scence/DemoScene.unity",
+            //"Assets/ActScene.unity",
+         };
+        BuildPipeline.BuildPlayer(scenes, "NetGame", BuildTarget.iOS, BuildOptions.None);
+
     }
 }
