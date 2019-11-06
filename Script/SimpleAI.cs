@@ -48,7 +48,8 @@ public class SimpleAI : MonoBehaviour {
     private CtrlType ctrlType = CtrlType.COMPUTER;
 
     private Dictionary<string, ActionStatus> actToStatus = new Dictionary<string, ActionStatus>();
-    private Dictionary<ActionStatus,string> statusToAct = new Dictionary<ActionStatus, string>();
+    private Dictionary<string, float> actionLastTimes = new Dictionary<string, float>();
+    private Dictionary<ActionStatus, string> statusToAct = new Dictionary<ActionStatus, string>();
     //action param
     private float speed=5f;
     private float jumpSpeed = 2f;
@@ -64,12 +65,13 @@ public class SimpleAI : MonoBehaviour {
     public GameScene battleManager;
 
     //battle logic
+    private float id = 0;
     private float maxHp=10f;
     private float hp=10f;
     private float attack=2f;
     private float defend = 1f;
     public float searchScope = 50f;
-    public float battleScope = 1f;
+    public float battleScope = 2f;
 
     public float attackCD = 0f;
     public float attackBeginTime = 0f;
@@ -85,6 +87,7 @@ public class SimpleAI : MonoBehaviour {
     public void BindBattleManager(GameScene manager)
     {
         battleManager = manager;
+        id = manager.GenBattleId();
     }
 
     void InitActStatusSwitchMap()
@@ -136,7 +139,14 @@ public class SimpleAI : MonoBehaviour {
             animator.SetTrigger(actHashId);
             AnimatorStateInfo stateInfo = animator.GetNextAnimatorStateInfo(0);
             actDuringTime = stateInfo.length;
+            if (id == 2)
+                Debug.Log(id+" _"+Time.time+" :"+actName + " " + actDuringTime);
             status = ChangeActionToStatus(actName);
+            if(!actionLastTimes.ContainsKey(actName))
+            {
+                actionLastTimes.Add(actName, actDuringTime);
+            }
+
         }
     }
 
@@ -187,7 +197,7 @@ public class SimpleAI : MonoBehaviour {
         if (IsDie())
             return;
         
-        Debug.Log("hp " + hp);
+        //Debug.Log("hp " + hp);
         if (hp <= 0)
         {
             DoAction("die", true);
@@ -197,6 +207,8 @@ public class SimpleAI : MonoBehaviour {
             {
                 float hurt = attacker.GetAttack() - defend;
                 hp = hp - hurt;
+                if(id == 2)
+                Debug.Log("hurt Time.."+Time.time);
                 DoAction("getHit", !IsBeAttacked());
             }
         }
@@ -205,6 +217,15 @@ public class SimpleAI : MonoBehaviour {
     public bool IsDie()
     {
         return status == ActionStatus.DIE;
+    }
+
+    public void Reset()
+    {
+        hp = maxHp;
+        status = ActionStatus.IDLE;
+        DoAction("idle",true);
+        FindTarget();
+
     }
 
     void Attack(SimpleAI defender)
@@ -216,8 +237,9 @@ public class SimpleAI : MonoBehaviour {
             if (IsActionDone() && IsAttacking())
             {
                 defender.BeAttacked(this);
+                attackBeginTime = Time.time;
             }
-            DoAction("attack_01", true);
+            DoAction("attack_01", !IsAttacking());
         }
     }
 
@@ -247,7 +269,11 @@ public class SimpleAI : MonoBehaviour {
             {
                 if(IsActionDone())
                 {
-                    Attack(target.gameObject.GetComponent<SimpleAI>());
+                    if(Time.time-attackBeginTime > attackCD)
+                    {
+                        
+                        Attack(target.gameObject.GetComponent<SimpleAI>());
+                    }
                 }
                 return;
             }

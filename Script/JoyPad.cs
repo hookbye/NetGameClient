@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class JoyPad : MonoBehaviour {
-    public SceneManger manager;
+    public GameScene manager;
     public AnimateBase player;
 	// Use this for initialization
 	void Start () {
-		
+        manager = GameObject.FindObjectOfType<GameScene>();
 	}
 	
 	// Update is called once per frame
@@ -65,5 +65,15 @@ public class JoyPad : MonoBehaviour {
         if (player == null)
             return;
         player.isRight = false;
+    }
+
+    public void OnResetClick()
+    {
+        Debug.Log("reset..");
+        if (manager!=null)
+        {
+            
+            manager.Reset();
+        }
     }
 }

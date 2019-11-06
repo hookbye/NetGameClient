@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GameScene : MonoBehaviour {
-    private List<GameObject> entries = new List<GameObject>(5);
+    private List<SimpleAI> entries = new List<SimpleAI>(5);
     public GameObject footmanPrefab;
     public JoyPad joyPad;
+    private int battleIndex=0;
 	// Use this for initialization
 	void Start () {
         Camera.main.transform.LookAt(GameObject.Find("Cube").transform);
@@ -17,7 +18,7 @@ public class GameScene : MonoBehaviour {
                 SimpleAI footAI = footMan.AddComponent<SimpleAI>();
                 footAI.BindBattleManager(this);
                 footMan.transform.position = new Vector3((i - 1) *20, 0, 0);
-                entries.Add(footMan);
+                entries.Add(footAI);
             }
         }
 		
@@ -28,21 +29,34 @@ public class GameScene : MonoBehaviour {
         SimpleAI target = null;
         Vector3 seekerPos = seeker.transform.position;
         float scope = seeker.searchScope;
-        foreach(GameObject iter in entries)
+        foreach(SimpleAI iter in entries)
         {
-            SimpleAI ai = iter.GetComponent<SimpleAI>();
-            if (iter != seeker.gameObject && !ai.IsDie())
+            if (iter != seeker && !iter.IsDie())
             {
                 Vector3 iterPos = iter.transform.position;
                 if (scope > Vector3.Distance(seekerPos, iterPos))
-                    return ai;
+                    return iter;
             }
         }
         return target;
     }
 	
+    public int GenBattleId()
+    {
+        battleIndex = battleIndex + 1;
+        return battleIndex;
+    }
+
 	// Update is called once per frame
 	void Update () {
 		
 	}
+
+    public void Reset()
+    {
+        foreach (SimpleAI iter in entries)
+        {
+            iter.Reset();
+        }
+    }
 }
