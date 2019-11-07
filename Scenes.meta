@@ -1,0 +1,20 @@
+<<<<<<< HEAD:Scenes.meta
+fileFormatVersion: 2
+guid: 4f704ae4b4f98ae41a0bce26658850c1
+folderAsset: yes
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+=======
+fileFormatVersion: 2
+guid: c6ceaeae64cd76e499e352577fc22832
+folderAsset: yes
+timeCreated: 1570874829
+licenseType: Pro
+DefaultImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+>>>>>>> bb6feaef04deb37071324197787c4f6fd968a7a5:Tools.meta
