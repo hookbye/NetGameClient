@@ -239,9 +239,11 @@ public class SimpleAI : MonoBehaviour {
             {
                 defender.BeAttacked(this);
                 attackBeginTime = Time.time;
+                DoAction("attack_01");
             }
             Debug.Log("is Attacking..." + IsAttacking()+" "+status);
-            DoAction("attack_01", !IsAttacking());
+            if(!IsAttacking())
+                DoAction("attack_01", true);
         }
     }
 
