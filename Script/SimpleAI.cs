@@ -47,6 +47,13 @@ public class SimpleAI : MonoBehaviour {
     }
     private CtrlType ctrlType = CtrlType.COMPUTER;
 
+    enum AIType
+    {
+        PATROL,
+        BATTLE,
+    }
+    AIType aiType = AIType.BATTLE;
+
     private Dictionary<string, ActionStatus> actToStatus = new Dictionary<string, ActionStatus>();
     private Dictionary<string, float> actionLastTimes = new Dictionary<string, float>();
     private Dictionary<ActionStatus, string> statusToAct = new Dictionary<ActionStatus, string>();
@@ -54,7 +61,9 @@ public class SimpleAI : MonoBehaviour {
     private float speed=5f;
     private float jumpSpeed = 2f;
 
-
+    //
+    private float updateDuringCD = 1.0f;
+    private float updateStampt = 0f;
     //StateMachine
     private Animator animator;
     private float lastActBeginTime = 0f;
@@ -71,10 +80,30 @@ public class SimpleAI : MonoBehaviour {
     private float attack=2f;
     private float defend = 1f;
     public float searchScope = 50f;
+    public float searchCD = 2;
+    float lastSearchTime = 0f;
+    public int searchNum = 0;
+    public const int MaxSearchCount=2;
+    public float patrolMaxDis = 10f;
+    public float patrlDis = 0f;
+    Vector3 nextPos = Vector3.zero;
+    
+
     public float battleScope = 2f;
 
-    public float attackCD = 5f;
+    public float attackCD = 0f;
+    public float attackInitCD = 0.9f;
     public float attackBeginTime = 0f;
+    
+    public enum EntyColor{
+        RED,
+        BLUE,
+    }
+    public EntyColor entyColor;
+    public void SetEntyColor(EntyColor color)
+    {
+        entyColor = color;
+    }
 
 	// Use this for initialization
 	void Start () {
@@ -90,6 +119,7 @@ public class SimpleAI : MonoBehaviour {
         id = manager.GenBattleId();
     }
 
+    // display actions init
     void InitActStatusSwitchMap()
     {
         BindActionAndStatus("idle", ActionStatus.IDLE);
@@ -110,22 +140,6 @@ public class SimpleAI : MonoBehaviour {
         statusToAct.Add(stat,act);
     }
 
-    void FindTarget()
-    {
-        if(target == null)
-        {
-            target = battleManager.FindTarget(this);
-        }
-        
-    }
-
-    public void SetTarget(SimpleAI targetT)
-    {
-        target = targetT;
-    }
-	
-	
-
     // state machine
     public void DoAction(string actName,bool forceBreak = false)
     {
@@ -136,12 +150,12 @@ public class SimpleAI : MonoBehaviour {
         if(IsActionDone() || forceBreak)
         {
             lastActBeginTime = Time.time;
-            Debug.LogWarning("real do action.."+IsActionDone()+" "+forceBreak);
+            //Debug.LogWarning("real do action.."+IsActionDone()+" "+forceBreak);
             animator.SetTrigger(actHashId);
             AnimatorStateInfo stateInfo = animator.GetNextAnimatorStateInfo(0);
             actDuringTime = stateInfo.length;
-            if (id == 2)
-                Debug.Log(id+" _"+Time.time+" :"+actName + " " + actDuringTime);
+            //if (id == 2)
+            //    Debug.Log(id+" _"+Time.time+" :"+actName + " " + actDuringTime);
             status = ChangeActionToStatus(actName);
             if(!actionLastTimes.ContainsKey(actName))
             {
@@ -188,6 +202,48 @@ public class SimpleAI : MonoBehaviour {
         }
         return "";
     }
+
+    // battle logic 
+    // search enemy
+    bool FindTarget(bool resetSearchNum = false)
+    {
+        Debug.LogWarning(id + " : search Target -num: " + searchNum + "  force Search" + resetSearchNum + " die:" + IsDie());
+        if (resetSearchNum)
+        {
+            searchNum = 0;
+        }
+        if (searchNum > MaxSearchCount)
+        {
+            Patrol();
+            return false;
+        }
+        else
+        {
+            searchNum += 1;
+        }
+        if (target == null)
+        {
+            target = battleManager.FindTarget(this);
+            if (target)
+            {
+                searchNum = 0;
+                aiType = AIType.BATTLE;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public bool HaveTarget()
+    {
+        return target && !target.IsDie();
+    }
+
+    public void SetTarget(SimpleAI targetT)
+    {
+        target = targetT;
+    }
+
     public float GetAttack()
     {
         return attack;
@@ -197,7 +253,12 @@ public class SimpleAI : MonoBehaviour {
     {
         if (IsDie())
             return;
-        
+        if(target == null)
+        {
+            target = attacker;
+            aiType = AIType.BATTLE;
+        }
+            
         //Debug.Log("hp " + hp);
         if (hp <= 0)
         {
@@ -208,25 +269,12 @@ public class SimpleAI : MonoBehaviour {
             {
                 float hurt = attacker.GetAttack() - defend;
                 hp = hp - hurt;
-                if(id == 2)
-                Debug.Log("hurt Time.."+Time.time);
-                DoAction("getHit", !IsBeAttacked());
+                //if(id == 2)
+                //Debug.Log("hurt Time.."+Time.time);
+                
             }
+            DoAction("getHit", !IsBeAttacked());
         }
-    }
-
-    public bool IsDie()
-    {
-        return status == ActionStatus.DIE;
-    }
-
-    public void Reset()
-    {
-        hp = maxHp;
-        status = ActionStatus.IDLE;
-        DoAction("idle",true);
-        FindTarget();
-
     }
 
     void Attack(SimpleAI defender)
@@ -239,12 +287,15 @@ public class SimpleAI : MonoBehaviour {
             {
                 defender.BeAttacked(this);
                 attackBeginTime = Time.time;
+                DoAction("attack_01");
             }
-            Debug.Log("is Attacking..." + IsAttacking()+" "+status);
-            DoAction("attack_01", !IsAttacking());
+            //Debug.Log("is Attacking..." + IsAttacking()+" "+status);
+            if(!IsAttacking())
+                DoAction("attack_01", true);
         }
     }
 
+    // judge status
     bool IsAttacking()
     {
         return status == ActionStatus.ATTACK01 || status == ActionStatus.ATTACK02 || status == ActionStatus.ATTACK03;
@@ -255,35 +306,127 @@ public class SimpleAI : MonoBehaviour {
         return status == ActionStatus.GETHIT || status == ActionStatus.DEFEND;
     }
 
+    public bool IsDie()
+    {
+        return status == ActionStatus.DIE;
+    }
+
+    public void Reset()
+    {
+        hp = maxHp;
+        status = ActionStatus.IDLE;
+        DoAction("idle", true);
+        FindTarget();
+    }
+
+    // AI===
+    void Patrol()
+    {
+        if(!IsDie())
+        {
+            float randomY = Random.Range(-360, 360);
+            transform.Rotate(new Vector3(0, randomY, 0));
+            patrlDis = 0f;
+            patrolMaxDis = Random.Range(5, GameScene.MAX_BOARDER);
+            aiType = AIType.PATROL;
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
+        //if (Time.time-updateStampt > updateDuringCD)
+        //{
+        //    Debug.Log("timer:---"+Time.time);
+        //    updateStampt = Time.time;
+        //}else
+        //{
+        //    return;
+        //}
+           
         if(IsDie())
         {
             return;
         }
         HandleInput();
-        if (target != null && !target.IsDie())
+        float moveDistance = speed * Time.deltaTime;
+        do
         {
-            transform.LookAt(target.transform);
-
-            if (Vector3.Distance(transform.position, target.transform.position) < battleScope)
+            if (aiType == AIType.PATROL)
             {
-                if(IsActionDone())
+                Debug.Log("in patrol....");
+                patrlDis += moveDistance;
+                if (IsActionDone())
                 {
-                    if(Time.time-attackBeginTime > attackCD)
-                    {
-                        
-                        Attack(target.gameObject.GetComponent<SimpleAI>());
-                    }
+                    DoAction("run");
                 }
+                if (Time.time - lastSearchTime > searchCD )
+                {
+                    lastSearchTime = Time.time;
+                    if (FindTarget(true))
+                        break;
+                }
+                if (patrlDis > patrolMaxDis)
+                {
+                    aiType = AIType.BATTLE;
+                    FindTarget(true);
+                    patrlDis = 0;
+                }
+                nextPos = transform.position + transform.forward * moveDistance;
+                if (Mathf.Abs(nextPos.x) > GameScene.MAX_BOARDER || Mathf.Abs(nextPos.z) > GameScene.MAX_BOARDER)
+                {
+                    Patrol();
+                }
+                nextPos.x = Mathf.Clamp(nextPos.x, -GameScene.MAX_BOARDER, GameScene.MAX_BOARDER);
+                nextPos.z = Mathf.Clamp(nextPos.z, -GameScene.MAX_BOARDER, GameScene.MAX_BOARDER);
+                transform.position = nextPos;
                 return;
             }
-            else
+        } while (false);
+        
+        do
+        {
+            if (target != null)
             {
-                transform.position = transform.position + transform.forward * speed * Time.deltaTime;
+                if (target.IsDie())
+                {
+                    target = null;
+                    FindTarget(true);
+                    DoAction("run", true);
+                    break;
+                }
+                transform.LookAt(target.transform);
+
+                if (Vector3.Distance(transform.position, target.transform.position) < battleScope)
+                {
+                    if (IsActionDone())
+                    {
+                        if (attackCD == 0) attackCD = attackInitCD;
+                        if (Time.time - attackBeginTime > attackCD)
+                        {
+
+                            Attack(target.gameObject.GetComponent<SimpleAI>());
+                        }
+                    }
+                    return;
+                }
+                else
+                {
+                    nextPos = transform.position + transform.forward * moveDistance;
+                    if(Mathf.Abs(nextPos.x) > GameScene.MAX_BOARDER || Mathf.Abs(nextPos.z) > GameScene.MAX_BOARDER)
+                    {
+                        Patrol();
+                    }
+                    nextPos.x = Mathf.Clamp(nextPos.x, -GameScene.MAX_BOARDER, GameScene.MAX_BOARDER);
+                    nextPos.z = Mathf.Clamp(nextPos.z, -GameScene.MAX_BOARDER, GameScene.MAX_BOARDER);
+                    transform.position = nextPos;
+                }
+            }else
+            {
+                Patrol();
             }
-        }
+        } while (false);
+        
         
         if (IsActionDone())
         {
