@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class GameScene : MonoBehaviour {
-    private List<SimpleAI> entries = new List<SimpleAI>(5);
+    public const int MAX_ENTYNUM = 64;
+    public const float MAX_BOARDER = 23;
+    private List<SimpleAI> entries = new List<SimpleAI>(MAX_ENTYNUM);
     public GameObject footmanPrefab;
     public JoyPad joyPad;
     private int battleIndex=0;
@@ -14,11 +16,8 @@ public class GameScene : MonoBehaviour {
         {
             for (int i = 0; i < 2; i++)
             {
-                GameObject footMan = Instantiate(footmanPrefab);//Resources.LoadAssetAtPath<GameObject>("Assets/Footman/Prefabs/Footman_Unlit_Green.prefab");// GameObject.Instantiate("Footman_Unlit_Green.prefab");
-                SimpleAI footAI = footMan.AddComponent<SimpleAI>();
-                footAI.BindBattleManager(this);
-                footMan.transform.position = new Vector3((i - 1) *20, 0, 0);
-                entries.Add(footAI);
+                SimpleAI footAI = GenerateEntries();
+                footAI.transform.position = new Vector3((i - 1) *20, 0, 0);
             }
         }
 		
@@ -34,7 +33,7 @@ public class GameScene : MonoBehaviour {
             if (iter != seeker && !iter.IsDie())
             {
                 Vector3 iterPos = iter.transform.position;
-                if (scope > Vector3.Distance(seekerPos, iterPos))
+                if (scope < Vector3.Distance(seekerPos, iterPos))
                     return iter;
             }
         }
@@ -58,5 +57,23 @@ public class GameScene : MonoBehaviour {
         {
             iter.Reset();
         }
+    }
+
+    public SimpleAI GenerateEntries()
+    {
+        GameObject footMan = Instantiate(footmanPrefab);//Resources.LoadAssetAtPath<GameObject>("Assets/Footman/Prefabs/Footman_Unlit_Green.prefab");// GameObject.Instantiate("Footman_Unlit_Green.prefab");
+        SimpleAI footAI = footMan.AddComponent<SimpleAI>();
+        footAI.BindBattleManager(this);
+        entries.Add(footAI);
+        return footAI;
+    }
+
+    public void GenerateRandomEntries()
+    {
+        float randomX = Random.Range(-MAX_BOARDER, MAX_BOARDER);
+        float randomZ = Random.Range(-MAX_BOARDER, MAX_BOARDER);
+        SimpleAI footAI = GenerateEntries();
+        footAI.transform.position = new Vector3(randomX, 0, randomZ);
+        footAI.SetEntyColor(SimpleAI.EntyColor.BLUE);
     }
 }

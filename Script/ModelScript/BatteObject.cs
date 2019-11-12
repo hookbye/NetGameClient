@@ -93,6 +93,11 @@ public class BatteObject : MonoBehaviour {
         y = pos.y;
         z = pos.z;
     }
+
+    public void MoveTo(float tx,float ty,float tz)
+    {
+
+    }
 	
 	// Update is called once per frame
 	void Update () {
