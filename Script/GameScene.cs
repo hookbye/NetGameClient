@@ -12,13 +12,15 @@ public class GameScene : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         Camera.main.transform.LookAt(GameObject.Find("Cube").transform);
-        if(footmanPrefab != null)
+        joyPad = GameObject.Find("JoyPad").GetComponent<JoyPad>();
+        if (footmanPrefab != null)
         {
             for (int i = 0; i < 2; i++)
             {
                 SimpleAI footAI = GenerateEntries();
                 footAI.transform.position = new Vector3((i - 1) *20, 0, 0);
             }
+            joyPad.SetPlayer(GenerateEntries());
         }
 		
 	}

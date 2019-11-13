@@ -59,7 +59,18 @@ public class SimpleAI : MonoBehaviour {
     private Dictionary<ActionStatus, string> statusToAct = new Dictionary<ActionStatus, string>();
     //action param
     private float speed=5f;
-    private float jumpSpeed = 2f;
+    private const float jumpSpeed = 2f;
+    private const float walkSpeed = 5f;
+    public float steerSpeed = 30f;
+
+    //player control
+    public bool isTurnningRight = false;
+    public bool isTurnningLeft = false;
+    public bool isForward = false;
+    public bool isBackward = false;
+    public bool isLockFaceforward = false;
+    public bool isRun = false;
+    public bool isJump = false;
 
     //
     private float updateDuringCD = 1.0f;
@@ -87,6 +98,7 @@ public class SimpleAI : MonoBehaviour {
     public float patrolMaxDis = 10f;
     public float patrlDis = 0f;
     Vector3 nextPos = Vector3.zero;
+    Vector3 nextDir = Vector3.zero;
     
 
     public float battleScope = 2f;
@@ -119,6 +131,11 @@ public class SimpleAI : MonoBehaviour {
         id = manager.GenBattleId();
     }
 
+    public void LoadPlayerSetting()
+    {
+        ctrlType = CtrlType.PLAYER;
+    }
+
     // display actions init
     void InitActStatusSwitchMap()
     {
@@ -131,6 +148,7 @@ public class SimpleAI : MonoBehaviour {
         BindActionAndStatus("jum", ActionStatus.JUMP);
         BindActionAndStatus("run", ActionStatus.RUN);
         BindActionAndStatus("taunt", ActionStatus.TAUNT);
+        BindActionAndStatus("defend", ActionStatus.DEFEND);
         BindActionAndStatus("die", ActionStatus.DIE);
     }
 
@@ -170,20 +188,7 @@ public class SimpleAI : MonoBehaviour {
         return Time.time - lastActBeginTime > actDuringTime;
     }
 
-    bool HandleInput()
-    {
-        bool hasInput = false;
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            DoAction("jump");
-            hasInput = true;
-        }
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            hasInput = true;
-        }
-        return hasInput;
-    }
+    
 
     public ActionStatus ChangeActionToStatus(string action)
     {
@@ -205,7 +210,7 @@ public class SimpleAI : MonoBehaviour {
 
     // battle logic 
     // search enemy
-    bool FindTarget(bool resetSearchNum = false)
+    public bool FindTarget(bool resetSearchNum = false)
     {
         Debug.LogWarning(id + " : search Target -num: " + searchNum + "  force Search" + resetSearchNum + " die:" + IsDie());
         if (resetSearchNum)
@@ -277,8 +282,10 @@ public class SimpleAI : MonoBehaviour {
         }
     }
 
-    void Attack(SimpleAI defender)
+    public void Attack(SimpleAI defender)
     {
+        if (defender == null)
+            return;
         if (IsBeAttacked() && !IsActionDone())
             return;
         if (IsActionDone() || !IsAttacking())
@@ -294,11 +301,38 @@ public class SimpleAI : MonoBehaviour {
                 DoAction("attack_01", true);
         }
     }
+    //for JoyPad
+    public void DoAttack()
+    {
+        if(!HaveTarget())
+        {
+            FindTarget();
+        }
+        if(HaveTarget())
+        {
+            Attack(target);
+        }
+        else
+        {
+            DoAction("attack_01", !IsAttacking());
+        }
+    }
+
+    public void DoDefend()
+    {
+        Debug.LogError(status);
+        DoAction("defend", status != ActionStatus.DEFEND);
+    }
 
     // judge status
     bool IsAttacking()
     {
         return status == ActionStatus.ATTACK01 || status == ActionStatus.ATTACK02 || status == ActionStatus.ATTACK03;
+    }
+
+    bool IsRunning()
+    {
+        return status == ActionStatus.RUN;
     }
 
     bool IsBeAttacked()
@@ -322,6 +356,7 @@ public class SimpleAI : MonoBehaviour {
     // AI===
     void Patrol()
     {
+        if (ctrlType == CtrlType.PLAYER)return;
         if(!IsDie())
         {
             float randomY = Random.Range(-360, 360);
@@ -331,7 +366,68 @@ public class SimpleAI : MonoBehaviour {
             aiType = AIType.PATROL;
         }
     }
+    // move control
+    public void MoveVertial(bool isForward = true)
+    {
 
+        Vector3 dir = transform.forward;
+        float moveDistance = speed * Time.deltaTime;
+        if (!isForward)
+        {
+            dir.x = -dir.x;
+            dir.z = -dir.z;
+        }
+        
+        nextPos = transform.position + dir * moveDistance;
+        //if (Mathf.Abs(nextPos.x) > GameScene.MAX_BOARDER || Mathf.Abs(nextPos.z) > GameScene.MAX_BOARDER)
+        //{
+        //    Patrol();
+        //}
+        nextPos.x = Mathf.Clamp(nextPos.x, -GameScene.MAX_BOARDER, GameScene.MAX_BOARDER);
+        nextPos.z = Mathf.Clamp(nextPos.z, -GameScene.MAX_BOARDER, GameScene.MAX_BOARDER);
+        transform.position = nextPos;
+        DoAction("run", !IsRunning());
+    }
+
+    public void Turnning(bool isLeft=true)
+    {
+        float dir = isLeft ? 1 : -1;
+        nextDir = transform.eulerAngles;
+        nextDir.y = dir*steerSpeed * Time.deltaTime;
+        transform.Rotate(nextDir);
+    }
+
+    bool HandleInput()
+    {
+        bool hasInput = false;
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            DoAction("jump");
+            hasInput = true;
+        }
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            hasInput = true;
+        }
+        if (isTurnningLeft)
+        {
+            Turnning();
+        }
+        if (isTurnningRight)
+        {
+            Turnning(false);
+        }
+        if (isForward)
+        {
+            MoveVertial();
+        }
+        if(isBackward)
+        {
+            MoveVertial(false);
+        }
+        
+        return hasInput;
+    }
     // Update is called once per frame
     void Update()
     {
@@ -349,6 +445,10 @@ public class SimpleAI : MonoBehaviour {
             return;
         }
         HandleInput();
+        if(ctrlType == CtrlType.PLAYER)
+        {
+            return;
+        }
         float moveDistance = speed * Time.deltaTime;
         do
         {
@@ -404,7 +504,6 @@ public class SimpleAI : MonoBehaviour {
                         if (attackCD == 0) attackCD = attackInitCD;
                         if (Time.time - attackBeginTime > attackCD)
                         {
-
                             Attack(target.gameObject.GetComponent<SimpleAI>());
                         }
                     }
