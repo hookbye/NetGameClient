@@ -454,7 +454,7 @@ public class SimpleAI : MonoBehaviour {
         {
             if (aiType == AIType.PATROL)
             {
-                Debug.Log("in patrol....");
+                //Debug.Log("in patrol....");
                 patrlDis += moveDistance;
                 if (IsActionDone())
                 {
