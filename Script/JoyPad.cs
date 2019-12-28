@@ -25,7 +25,30 @@ public class JoyPad : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
+        Vector3 touchPos = Vector3.zero;
+        if (Input.touchCount == 1 && Input.touches[0].phase == TouchPhase.Began)
+        {
+            touchPos = Input.touches[0].position;
+        }
+        if(Input.GetMouseButtonUp(1))
+        {
+            touchPos = Input.mousePosition;
+        }
+        if (touchPos != Vector3.zero)
+        {
+            object ray = Camera.main.ScreenPointToRay(touchPos);
+            RaycastHit hit;
+            bool isHit = Physics.Raycast((Ray)ray, out hit);
+            if (isHit)
+            {
+                //Debug.Break();
+                if (manager != null)
+                {
+                    manager.GenerateEntriesByPos(hit.point);
+                }
+                
+            }
+        }
 	}
 
 
@@ -98,7 +121,6 @@ public class JoyPad : MonoBehaviour {
         Debug.Log("reset..");
         if (manager!=null)
         {
-            
             manager.Reset();
         }
     }

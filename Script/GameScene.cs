@@ -74,8 +74,13 @@ public class GameScene : MonoBehaviour {
     {
         float randomX = Random.Range(-MAX_BOARDER, MAX_BOARDER);
         float randomZ = Random.Range(-MAX_BOARDER, MAX_BOARDER);
+        GenerateEntriesByPos(new Vector3(randomX, 0, randomZ));
+    }
+
+    public void GenerateEntriesByPos(Vector3 pos)
+    {
         SimpleAI footAI = GenerateEntries();
-        footAI.transform.position = new Vector3(randomX, 0, randomZ);
+        footAI.transform.position = pos;
         footAI.SetEntyColor(SimpleAI.EntyColor.BLUE);
     }
 }

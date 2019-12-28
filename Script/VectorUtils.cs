@@ -24,10 +24,10 @@ public class VectorUtils : MonoBehaviour {
 	void Update () {
         Vector3 forward = transform.TransformDirection(Vector3.forward) * 10;
         //Debug.DrawRay(transform.position, forward, Color.green);
-        Debug.Log(vecList);
+        //Debug.Log(vecList);
         for (int i=0;i<vecList.Count;++i)
         {
-            Debug.Log(vecList[i].lineColor);
+            //Debug.Log(vecList[i].lineColor);
             ForDebug(transform.position , vecList[i].vec, vecList[i].lineColor);
         }
 	}

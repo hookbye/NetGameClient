@@ -61,7 +61,7 @@ public class SimpleAI : MonoBehaviour {
     private float speed=5f;
     private const float jumpSpeed = 2f;
     private const float walkSpeed = 5f;
-    public float steerSpeed = 30f;
+    public float steerSpeed = 300f;
 
     //player control
     public bool isTurnningRight = false;
