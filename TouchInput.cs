@@ -5,6 +5,9 @@ using UnityEngine;
 public class TouchInput : MonoBehaviour {
     public Camera camera;
     private Vector2 m_screenPos = new Vector2();
+    private Vector3 lastTouchPos;
+    private bool isTouchBegin = false;
+    private bool isTouchEnd = true;
 	// Use this for initialization
 	void Start () {
         camera = Camera.main;
@@ -15,8 +18,23 @@ public class TouchInput : MonoBehaviour {
     {
         if(Input.GetMouseButtonDown(0))
         {
-            Debug.Log(Input.mousePosition);
+            isTouchBegin = true;
+            lastTouchPos = Input.mousePosition;
+            Debug.Log("donee..e.e");
         }
+        if(Input.GetMouseButtonUp(0))
+        {
+            isTouchBegin = false;
+        }
+        if(isTouchBegin)
+        {
+            Vector3 touchVec = Input.mousePosition;
+            Vector3 deltPos = touchVec - lastTouchPos;
+            Vector3 cameraPos = camera.transform.position+deltPos*0.001f;
+            
+            camera.transform.Translate(cameraPos);
+        }
+
     }
 
     void OnMobileInput()
@@ -43,7 +61,16 @@ public class TouchInput : MonoBehaviour {
         //    Debug.Log(Input.touchCount);
         //    return;
         //}
-        OnMouseInput();
+        //Debug.Log(Application.platform);
+        //if(Application.platform == RuntimePlatform.WindowsEditor)
+        //{
+        //    OnMouseInput();
+        //}
+        //else
+        //{
+        //    OnMobileInput();
+        //}
+       
         
 	}
 }
