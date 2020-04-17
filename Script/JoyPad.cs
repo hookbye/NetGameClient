@@ -49,7 +49,55 @@ public class JoyPad : MonoBehaviour {
                 
             }
         }
-	}
+
+        KeyBoardEvent();
+
+    }
+
+    public void KeyBoardEvent()
+    {
+        // keyboard event
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            OnUpClick();
+        }
+        else if (Input.GetKeyUp(KeyCode.W))
+        {
+            OnUpCancel();
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            OnDownClick();
+        }
+        else if (Input.GetKeyUp(KeyCode.S))
+        {
+            OnDownCancel();
+        }
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            OnLeftClick();
+        }
+        else if (Input.GetKeyUp(KeyCode.A))
+        {
+            OnLeftCancel();
+        }
+
+        if (Input.GetKeyDown(KeyCode.D))
+        {
+            OnRightClick();
+        }
+        else if (Input.GetKeyUp(KeyCode.D))
+        {
+            OnRightCancel();
+        }
+
+        if(Input.GetMouseButtonDown(0))
+        {
+            OnFightClick();
+        }
+    }
 
 
     //Direct control

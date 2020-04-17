@@ -391,7 +391,7 @@ public class SimpleAI : MonoBehaviour {
 
     public void Turnning(bool isLeft=true)
     {
-        float dir = isLeft ? 1 : -1;
+        float dir = isLeft ? -1 : 1;
         nextDir = transform.eulerAngles;
         nextDir.y = dir*steerSpeed * Time.deltaTime;
         transform.Rotate(nextDir);

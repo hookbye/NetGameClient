@@ -8,6 +8,8 @@ public class GameScene : MonoBehaviour {
     private List<SimpleAI> entries = new List<SimpleAI>(MAX_ENTYNUM);
     public GameObject footmanPrefab;
     public JoyPad joyPad;
+    public RoleCamera roleCamera;
+    public SimpleAI player;
     private int battleIndex=0;
 	// Use this for initialization
 	void Start () {
@@ -20,7 +22,9 @@ public class GameScene : MonoBehaviour {
                 SimpleAI footAI = GenerateEntries();
                 footAI.transform.position = new Vector3((i - 1) *20, 0, 0);
             }
-            joyPad.SetPlayer(GenerateEntries());
+            player = GenerateEntries();
+            roleCamera.role = player.gameObject;
+            joyPad.SetPlayer(player);
         }
 		
 	}
